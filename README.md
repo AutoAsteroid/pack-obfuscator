@@ -54,5 +54,6 @@ Obfuscated pack size difference: 9.158 -> 17.434 MB.
 
 - **Rename Textures:** If rename textures is enabled, behavior packs that reference your custom textures (such as server forms) will not work due to their file paths changing. The simplest solution to this is to create a copy of your textures under a different folder name and using that path in your behavior packs. So while players can access these unobfuscated files, modifying them will not change the resource pack.
 - **Comments Enabled:** The larger the comment size range, the larger your pack becomes contingent on the size and amount of JSON files your pack has. Increasingly large ranges become pointless as they trade off unnecessary pack size for something that can be cleaned by a JSON parser. Too small of ranges and your JSON files do not look obfuscated as thoroughly.
+- **Rename Prefix:** By default, the rename prefix prepends `.` to hide from the linux, `\u202E` (Right-to-Left override) to reverse the name, and control characters `\u0015\u0014\u0013\u0012` that cause certain operating systems to not know the file exists. For example, files and folders named with them do not show on the default Windows file explorer, but macOS and WinRAR can view them fine.
 
 ### Created by: https://github.com/AutoAsteroid
