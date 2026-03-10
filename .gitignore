@@ -1,2 +1,11 @@
+# macOS junk
 .DS_Store
 **/.DS_Store
+
+# Ignore everything inside input and output
+input/**/*
+output/**/*
+
+# But keep the placeholder files (like .gitkeep)
+!input/.gitkeep
+!output/.gitkeep
