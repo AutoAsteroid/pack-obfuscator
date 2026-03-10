@@ -11,6 +11,7 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
 - **File Flooding** – creates pointless empty files to increase the annoyance factor.  
 - **Prefix Renaming** – prepend certain control characters to file names.
 - **Read-only Permissions** – sets file permissions to read-only to annoy pack modifiers.
+- **Convert to TGA** - converts image files into their tga counter parts
 
 ### Configuration:
 ```json
@@ -27,7 +28,8 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
     "commentsSize": [ 50, 100 ],                            // Size range of each comment
     "fileFlood": false,                                     // Flood folders with random files
     "fileFloodCount": [ 100, 200 ],                         // Number of files to flood with range
-    "setReadOnly": true                                     // Set all files to read only
+    "setReadOnly": true,                                    // Set all files to read only
+    "convertTGA": false                                     // Converts .png and .jpeg files to .tga
 }
 ```
 ### Usage:

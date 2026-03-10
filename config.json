@@ -11,5 +11,6 @@
     "commentsSize": [ 50, 100 ],
     "fileFlood": false,
     "fileFloodCount": [ 100, 200 ],
-    "setReadOnly": true
+    "setReadOnly": false,
+    "convertTGA": false
 }

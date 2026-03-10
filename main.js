@@ -24,12 +24,19 @@ if (Object.values(config).filter(value => value === true).length !== 0) {
     obfuscate.copyDirectory(inputDirectory, outputDirectory);
 } else return console.log("None of the obfuscation configs are enabled.");
 
+if (config.convertTGA && !obfuscate.hasFFmpeg())
+    return console.log("Convert TGA requires you to have ffmpeg installed.");
+
 /**
  * Start obfuscation based on whether it is enabled in the config file
  */
 if (config.newUUID) {
     const newPackUUID = obfuscate.newPackUUID(outputDirectory);
     console.log("Your new pack UUID is:", newPackUUID);
+}
+if (config.convertTGA) {
+    const count = obfuscate.convertTGA(outputDirectory);
+    console.log("Converted", count, "image files to TGA format.");
 }
 if (config.renameTextures) {
     const count = obfuscate.renameTextures(outputDirectory);

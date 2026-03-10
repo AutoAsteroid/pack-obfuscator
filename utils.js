@@ -1,6 +1,12 @@
 
+/**
+ * We use no npm dependencies besides ffmpeg for tga file converting :) Woo!
+ */
+const { execSync } = require("child_process");
+const readline = require("readline");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const uuid = require("uuid");
 
 const config = require("./config.json");
@@ -17,6 +23,14 @@ function stringToUnicode(string) {
 }
 function randomInt(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
+}
+
+function hasFFmpeg() {
+    // Makes sure the user has ffmpeg installed for tga converting
+    try {
+        execSync("ffmpeg -version", { stdio: "ignore" });
+        return true;
+    } catch { return false; }
 }
 
 function jsonToUnicode(jsonString) {
@@ -353,7 +367,54 @@ function setReadOnly(directory) {
     return fileCount;
 }
 
+function convertTGA(directory) {
+    /**
+     * This function converts png and jpeg images to "corrupted" .tga files
+     */
+    let fileCount = 0;
+    for (const file of fs.readdirSync(directory)) {
+        if (!file.endsWith(".png") && !file.endsWith(".jpeg")) continue;
+
+        // Makes use of ffmpeg to convert our images to tga format
+        const fullPath = path.join(directory, file);
+        const fileName = path.basename(file, path.extname(file));
+        const output = path.join(directory, fileName + ".tga");
+        const current = fullPath.replace(outputDirectory, "");
+        if (current === "/pack_icon.png") continue;
+
+        readline.clearLine(process.stdout, 0);
+        readline.cursorTo(process.stdout, 0);
+        process.stdout.write(`Converting to TGA format: ${current}`);
+        execSync(`ffmpeg -loglevel quiet -i "${fullPath}" "${output}"`);
+
+        // Remove the old image file as we don't need it anymore
+        fs.rmSync(fullPath); fileCount += 1;
+
+        // "Corrupt" our tga file for low level parsers. Not fullproof
+        const buffer = fs.readFileSync(output);
+        const idLength = randomInt(15, 255);
+        buffer[0] = idLength;
+
+        // Force top left origin and set our alpha depth to nonsense
+        buffer[17] = (buffer[17] & 0x0F) | 0x20;
+        buffer[17] = (buffer[17] & 0xF0) | 0x0F;
+
+        // Write extra bytes into the tga file
+        fs.writeFileSync(output, Buffer.concat([
+            buffer.slice(0, 18), crypto.randomBytes(idLength),
+            buffer.slice(18),
+            crypto.randomBytes(randomInt(10, 20))
+        ]));
+    }
+    for (const filePath of getDirectories(directory))
+        fileCount += convertTGA(filePath);
+
+    readline.clearLine(process.stdout, 0);
+    readline.cursorTo(process.stdout, 0);
+    return fileCount;
+}
+
 module.exports = {
-    newPackUUID, renameTextures, obfuscateJSON, flattenJSON, floodFiles,
-    setReadOnly, copyDirectory, directorySize
+    renameTextures, obfuscateJSON, flattenJSON, floodFiles, setReadOnly, convertTGA,
+    newPackUUID, copyDirectory, directorySize, hasFFmpeg
 }
