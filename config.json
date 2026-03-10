@@ -1,0 +1,15 @@
+{
+    "input": "My Resource Pack",
+    "output": "",
+    "newUUID": true,
+    "unicode": true,
+    "flattenFiles": true,
+    "renameJSON": true,
+    "renameTextures": true,
+    "renamePrefix": ".\u202E\u0015\u0014\u0013\u0012",
+    "comments": true,
+    "commentsSize": [ 50, 100 ],
+    "fileFlood": false,
+    "fileFloodCount": [ 100, 200 ],
+    "setReadOnly": true
+}
