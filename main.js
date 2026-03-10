@@ -36,7 +36,7 @@ if (config.renameTextures) {
     console.log("Renamed", count, "texture paths in JSON files.");
 }
 if (config.unicode || config.comments) {
-    const { files, comments } = obfuscate.obsfucateJSON(outputDirectory);
+    const { files, comments } = obfuscate.obfuscateJSON(outputDirectory);
     console.log("Obsfucated", files, "applicable JSON files.");
     console.log("Flooded", comments, "comments into all JSON files.");
 }
