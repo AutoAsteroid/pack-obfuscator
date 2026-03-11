@@ -114,7 +114,6 @@ function manipulateStrings(parent, key, transform) {
         for (const key in value)
             if (typeof value[key] === "string")
                 value[key] = transform(value[key]);
-    console.log(parent, key);
     return parent[key];
 }
 
@@ -175,8 +174,7 @@ function renameTextures(directory) {
 
             const filePath = path.join(outputDirectory, texturePath);
             const extension = getExtension(filePath);
-            if (!fs.existsSync(filePath + extension))
-                return texturePath;
+            if (!fs.existsSync(filePath + extension)) return texturePath;
 
             // Rename our file to a random UUID and store this new mapping
             const parent = config.nestedFiles ? createNestedPath() : path.dirname(texturePath);
@@ -302,7 +300,7 @@ const retexturedPaths = new Set();
 function renameJSON(directory) {
     /**
      * This function will rename all JSON files in the below directories to random UUIDs
-     * and flatten their location if the config file enables them to.
+     * and move them to random nested folders if the config enabled them to
      */
     let renameCount = 0;
     const renamableDirectories = [
@@ -436,9 +434,10 @@ function deleteEmptyFolders(directory) {
     for (const filePath of getDirectories(directory))
         deleteCount += deleteEmptyFolders(filePath);
 
-    if (fs.readdirSync(directory).length) 
+    const files = fs.readdirSync(directory);
+    if (files.filter(file => file !== ".DS_Store").length) 
         return deleteCount;
-    else fs.rmdirSync(directory);
+    else fs.rmSync(directory, { recursive: true, force: true });
     return deleteCount + 1;
 }
 
