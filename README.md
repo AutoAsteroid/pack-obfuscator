@@ -21,6 +21,7 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
     "newUUID": true,                                        // Generate a new manifest UUID
     "unicode": true,                                        // Unicode escape JSON files
     "nestedFiles": true,                                    // Randomly nest files to random paths
+    "nestedRange": [ 3, 20 ],                               // Range of nested folder depth
     "renameJSON": true,                                     // Rename JSON files to random UUIDs
     "renameTextures": true,                                 // Resolve texture paths and rename them
     "renamePrefix": ".\u202E\u0015\u0014\u0013\u0012",      // Rename files with this prefix
