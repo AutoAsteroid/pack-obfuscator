@@ -39,18 +39,20 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
 
 ### Example Output:
 
-```base
-Copying all pack content into: ./output/Asteroid OBFS
-Your new pack UUID is: 90fbec0a-c26c-43c0-b326-82d4e2172f69
-Renamed 132 texture paths in JSON files.
-Obfuscated 181 applicable JSON files.
-Flooded 49993 comments into all JSON files.
-Renamed 156 applicable JSON file paths.
-Added 4578 pointless empty files.
-Changed 5445 file permissions to read only.
-Successfully obfuscated: ./input/Asteroid Resources
-Obfuscated pack size difference: 9.158 -> 17.434 MB.
 ```
+Pack Obsfucator % node main
+│   Copying all pack content into: ./output/Asteroid OBFS
+├── Your new pack UUID is: 99c92274-87f1-4344-9205-0db825f38f6d
+├── Converted 680 image files to TGA format.
+├── Renamed 132 texture paths in JSON files.
+├── Obsfucated 180 applicable JSON files.
+├── Flooded 49927 comments into all JSON files.
+├── Renamed 156 applicable JSON file paths.
+├── Changed 885 file permissions to read only.
+│   Successfully obfuscated: ./input/Asteroid Resources
+└── Obfuscated pack size difference: 9.310 -> 28.133 MB.
+```
+You may be required to run as sudo if you previously enabled setReadOnly
 
 ### Important Notes & Caveats:
 

@@ -24,6 +24,13 @@ function randomInt(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
 }
 
+const color = {
+    reset: "\x1b[0m",
+    red: text => "\x1b[31m" + text + color.reset,
+    green: text => "\x1b[32m" + text + color.reset,
+    yellow: text => "\x1b[33m" + text + color.reset
+}
+
 function hasFFmpeg() {
     // Makes sure the user has ffmpeg installed for tga converting
     try {
@@ -383,7 +390,7 @@ function convertTGA(directory) {
 
         readline.clearLine(process.stdout, 0);
         readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`Converting to TGA format: ${current}`);
+        process.stdout.write(`├── Converting to TGA format: ${color.green(current)}`);
         execSync(`ffmpeg -loglevel quiet -i "${fullPath}" "${output}"`);
 
         // Remove the old image file as we don't need it anymore
@@ -415,5 +422,5 @@ function convertTGA(directory) {
 
 module.exports = {
     renameTextures, obfuscateJSON, flattenJSON, floodFiles, setReadOnly, convertTGA,
-    newPackUUID, copyDirectory, directorySize, hasFFmpeg
+    newPackUUID, copyDirectory, directorySize, hasFFmpeg, color
 }
