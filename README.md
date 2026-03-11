@@ -6,7 +6,7 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
 
 - **JSON Unicode Escape Sequences** – converts JSON files to their unicode escape sequences.  
 - **Random UUID Renaming** – renames JSON and resolved texture files to random UUIDs.  
-- **Flatten JSON Folders** – moves JSON files from organized folders into a single structure.  
+- **Nested Folders** – moves your organized files to random nested folder ladders
 - **Comment Flooding** – adds garbage comments to JSON files at the cost of pack size.
 - **File Flooding** – creates pointless empty files to increase the annoyance factor.  
 - **Prefix Renaming** – prepend certain control characters to file names.
@@ -20,7 +20,7 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
     "output": "",                                           // Fallback to input if not defined
     "newUUID": true,                                        // Generate a new manifest UUID
     "unicode": true,                                        // Unicode escape JSON files
-    "flattenFiles": true,                                   // Flatten nested folders to one folder
+    "nestedFiles": true,                                    // Randomly nest files to random paths
     "renameJSON": true,                                     // Rename JSON files to random UUIDs
     "renameTextures": true,                                 // Resolve texture paths and rename them
     "renamePrefix": ".\u202E\u0015\u0014\u0013\u0012",      // Rename files with this prefix
@@ -42,15 +42,16 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
 ```
 Pack Obsfucator % node main
 │   Copying all pack content into: ./output/Asteroid OBFS
-├── Your new pack UUID is: 99c92274-87f1-4344-9205-0db825f38f6d
+├── Your new pack UUID is: 19b27e0b-9372-4b84-b4fd-3f059e72afd0
 ├── Converted 680 image files to TGA format.
 ├── Renamed 132 texture paths in JSON files.
 ├── Obsfucated 180 applicable JSON files.
 ├── Flooded 49927 comments into all JSON files.
 ├── Renamed 156 applicable JSON file paths.
-├── Changed 885 file permissions to read only.
+├── Changed 866 file permissions to read only.
+├── Deleted 26 empty folders created from nested paths.
 │   Successfully obfuscated: ./input/Asteroid Resources
-└── Obfuscated pack size difference: 9.310 -> 28.133 MB.
+└── Obfuscated pack size difference: 9.157 -> 25.987 MB.
 ```
 You may be required to run as sudo if you previously enabled setReadOnly
 

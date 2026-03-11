@@ -135,6 +135,19 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
+function createNestedPath(parent = "\u0015nested") {
+    // Generate a random nested folder path to store our files
+    const folders = [];
+    const [ min, max ] = config.nestedRange;
+    for (let i = 0; i < randomInt(min, max); i++)
+        folders.push(randomInt(0, 9).toString());
+
+    const fullPath = path.join(parent, ...folders);
+    const create = path.join(outputDirectory, fullPath);
+    fs.mkdirSync(create, { recursive: true });
+    return fullPath;
+}
+
 const newTextureMap = {};
 
 function renameTextures(directory) {
@@ -158,10 +171,7 @@ function renameTextures(directory) {
         // Redefine this path to a random UUID and add it to the mapping
         const convertPath = (texturePath) => {
             if (typeof texturePath !== "string") return texturePath;
-
-            const parent = path.dirname(texturePath);
-            if (newTextureMap[texturePath]) 
-                return path.join(parent, newTextureMap[texturePath]);
+            if (newTextureMap[texturePath]) return newTextureMap[texturePath];
 
             const filePath = path.join(outputDirectory, texturePath);
             const extension = getExtension(filePath);
@@ -169,11 +179,13 @@ function renameTextures(directory) {
                 return texturePath;
 
             // Rename our file to a random UUID and store this new mapping
-            renameCount += 1;
-            const newBase = newTextureMap[texturePath] = config.renamePrefix + crypto.randomUUID();
-            const newFile = path.join(outputDirectory, parent, newBase + extension);
-            fs.renameSync(filePath + extension, newFile);
-            return path.join(parent, newBase);
+            const parent = config.nestedFiles ? createNestedPath() : path.dirname(texturePath);
+            const newFile = path.join(parent, config.renamePrefix + crypto.randomUUID());
+            const newPath = path.join(outputDirectory, newFile);
+
+            fs.renameSync(filePath + extension, newPath + extension);
+            newTextureMap[texturePath] = newFile; renameCount += 1;
+            return newFile;
         }
         // Convert the values of all the "textures" keys in the object
         const textures = findKeysRecursive(jsonObject, "textures");
@@ -285,7 +297,9 @@ function obfuscateJSON(directory) {
     return { files: obfuscationCount, comments: commentCount };
 }
 
-function flattenJSON(directory) {
+const retexturedPaths = new Set();
+
+function renameJSON(directory) {
     /**
      * This function will rename all JSON files in the below directories to random UUIDs
      * and flatten their location if the config file enables them to.
@@ -299,32 +313,28 @@ function flattenJSON(directory) {
         "/render_controllers",
         "/models/entity"
     ];
+
     for (const fileName of fs.readdirSync(directory, () => {})) {
         if (!fileName.endsWith(".json")) continue;
 
+        // Check if this json file is in a texture path that is allowed to rename
         const fullPath = path.join(directory, fileName);
         const parent = directory.replace(outputDirectory, "");
         const renamable = renamableDirectories.find((name) => parent.startsWith(name));
-        if (!renamable) continue;
-
-        const newDirectory = config.flattenFiles ? 
-            path.join(outputDirectory, renamable) : 
-            path.join(outputDirectory, parent);
-
+        if (!renamable || retexturedPaths.has(parent)) continue;
+        
         // Generate the new file path location of this JSON file
-        const newName = config.renameJSON ? crypto.randomUUID() + ".json" : fileName;
-        const newPath = path.join(newDirectory, config.renamePrefix + newName);
+        const newDirectory = config.nestedFiles ? createNestedPath(renamable) : parent;
+        const newName = config.renameJSON ? 
+            config.renamePrefix + crypto.randomUUID() + ".json" : fileName;
+        const newPath = path.join(outputDirectory, newDirectory, newName);
 
         if (fullPath === newPath) continue;
         fs.renameSync(fullPath, newPath);
-        renameCount++;
+        retexturedPaths.add(newDirectory); renameCount++;
     }
     for (const filePath of getDirectories(directory))
-        renameCount += flattenJSON(filePath);
-
-    // Delete directory that are empty after flattening them
-    if (config.flattenFiles && fs.readdirSync(directory).length === 0) 
-        fs.rmdirSync(directory);
+        renameCount += renameJSON(filePath);
     return renameCount;
 }
 
@@ -420,7 +430,19 @@ function convertTGA(directory) {
     return fileCount;
 }
 
+function deleteEmptyFolders(directory) {
+    // Delete empty directories that may have been created
+    let deleteCount = 0;
+    for (const filePath of getDirectories(directory))
+        deleteCount += deleteEmptyFolders(filePath);
+
+    if (fs.readdirSync(directory).length) 
+        return deleteCount;
+    else fs.rmdirSync(directory);
+    return deleteCount + 1;
+}
+
 module.exports = {
-    renameTextures, obfuscateJSON, flattenJSON, floodFiles, setReadOnly, convertTGA,
-    newPackUUID, copyDirectory, directorySize, hasFFmpeg, color
+    renameTextures, obfuscateJSON, renameJSON, floodFiles, setReadOnly, convertTGA,
+    newPackUUID, copyDirectory, directorySize, hasFFmpeg, deleteEmptyFolders, color
 }

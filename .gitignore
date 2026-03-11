@@ -6,6 +6,5 @@
 input/**/*
 output/**/*
 
-# But keep the placeholder files (like .gitkeep)
 !input/.gitkeep
 !output/.gitkeep

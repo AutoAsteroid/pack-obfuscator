@@ -26,10 +26,11 @@ if (Object.values(config).filter(value => value === true).length !== 0) {
     console.log("│   Copying all pack content into:", yellow("./" + outputDirectory));
     fs.rmSync(outputDirectory, { recursive: true, force: true });
     obfuscate.copyDirectory(inputDirectory, outputDirectory);
-} else return console.log("└── None of the obfuscation configs are enabled.");
+} 
+else return console.log("└── None of the obfuscation configs are enabled.");
 
 /**
- * Start obfuscation based on whether it is enabled in the config file
+ * Start obfuscation based on whether it is enabled in the config file (renameTextures may not work)
  */
 if (config.newUUID) {
     const newPackUUID = obfuscate.newPackUUID(outputDirectory);
@@ -48,8 +49,8 @@ if (config.unicode || config.comments) {
     console.log("├── Obsfucated", green(files), "applicable JSON files.");
     console.log("├── Flooded", green(comments), "comments into all JSON files.");
 }
-if (config.flattenFiles || config.renameJSON) {
-    const count = obfuscate.flattenJSON(outputDirectory);
+if (config.renameJSON) {
+    const count = obfuscate.renameJSON(outputDirectory);
     console.log("├── Renamed", green(count), "applicable JSON file paths.");
 }
 if (config.fileFlood) {
@@ -62,8 +63,10 @@ if (config.setReadOnly) {
 }
 
 /**
- * Pack size doesn't really increase that much unless you enable comment flooding
+ * Pack size doesn't really increase that much unless you enable large comment flooding or TGA files
  */
+const deleted = obfuscate.deleteEmptyFolders(outputDirectory);
+console.log("├── Deleted", green(deleted), "empty folders created from nested paths.");
 console.log("│   Successfully obfuscated:", yellow("./" + inputDirectory));
 const oldSize = (obfuscate.directorySize(inputDirectory) / 1024 / 1024).toFixed(3);
 const newSize = (obfuscate.directorySize(outputDirectory) / 1024 / 1024).toFixed(3);
