@@ -7,7 +7,6 @@ const readline = require("readline");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const uuid = require("uuid");
 
 const config = require("./config.json");
 const outputDirectory = path.join("output", config.output || config.input);
@@ -164,7 +163,7 @@ function renameTextures(directory) {
 
             // Rename our file to a random UUID and store this new mapping
             renameCount += 1;
-            const newBase = newTextureMap[texturePath] = config.renamePrefix + uuid.v4();
+            const newBase = newTextureMap[texturePath] = config.renamePrefix + crypto.randomUUID();
             const newFile = path.join(outputDirectory, parent, newBase + extension);
             fs.renameSync(filePath + extension, newFile);
             return path.join(parent, newBase);
@@ -191,7 +190,7 @@ function newPackUUID(directory) {
     const manifest = path.join(directory, "manifest.json");
     const jsonObject = JSON.parse(fs.readFileSync(manifest));
 
-    jsonObject.header.uuid = uuid.v4();
+    jsonObject.header.uuid = crypto.randomUUID();
     jsonObject.header.name += " [OBFUSCATED]";
     const jsonString = JSON.stringify(jsonObject, null, 4);
     fs.writeFileSync(manifest, jsonString, "utf-8");
@@ -306,7 +305,7 @@ function flattenJSON(directory) {
             path.join(outputDirectory, parent);
 
         // Generate the new file path location of this JSON file
-        const newName = config.renameJSON ? uuid.v4() + ".json" : fileName;
+        const newName = config.renameJSON ? crypto.randomUUID() + ".json" : fileName;
         const newPath = path.join(newDirectory, config.renamePrefix + newName);
 
         if (fullPath === newPath) continue;
@@ -339,7 +338,7 @@ function floodFiles(directory) {
     const amount = randomInt(min, max);
     for (let i = 0; i < amount; i++) {
         const ext = extensions[randomInt(0, extensions.length - 1)];
-        const file = path.join(directory, uuid.v4() + ext);
+        const file = path.join(directory, crypto.randomUUID() + ext);
         fs.writeFileSync(file, randomJunkChar(), "binary");
     }
     fileCount += amount;
