@@ -44,18 +44,18 @@ if (config.renameTextures) {
     const count = obfuscate.renameTextures(outputDirectory);
     console.log("├── Renamed", green(count), "texture paths in JSON files.");
 }
+if (config.renameUIs) {
+    const count = obfuscate.renameUIs(outputDirectory);
+    console.log("├── Renamed", green(count), "JSON UI file paths.");
+}
 if (config.unicode || config.comments) {
     const { files, comments } = obfuscate.obfuscateJSON(outputDirectory);
-    console.log("├── Obsfucated", green(files), "applicable JSON files.");
+    console.log("├── Escaped", green(files), "applicable JSON unicode files.");
     console.log("├── Flooded", green(comments), "comments into all JSON files.");
 }
 if (config.renameJSON) {
     const count = obfuscate.renameJSON(outputDirectory);
     console.log("├── Renamed", green(count), "applicable JSON file paths.");
-}
-if (config.fileFlood) {
-    const count = obfuscate.floodFiles(outputDirectory);
-    console.log("├── Added", green(count), "pointless empty files.");
 }
 if (config.setReadOnly) {
     const count = obfuscate.setReadOnly(outputDirectory);

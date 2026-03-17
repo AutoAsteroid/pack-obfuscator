@@ -1,10 +1,12 @@
-# macOS junk
+# macOS junk files
 .DS_Store
 **/.DS_Store
 
-# Ignore everything inside input and output
+# Ignore folder contents
 input/**/*
 output/**/*
+vanilla/**/*
 
 !input/.gitkeep
 !output/.gitkeep
+!vanilla/.gitkeep

@@ -51,6 +51,17 @@ function jsonToUnicode(jsonString) {
     .replaceAll("\\u005c\\u006e", "\\u000a");
 }
 
+function parseJSON(file) {
+    if (!fs.existsSync(file, "utf-8")) return {};
+    // Safely parses a json file by removing comments first
+    return JSON.parse(fs
+        .readFileSync(file, "utf-8")
+        .replaceAll(/\u0015/g, "\\u0015")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/(?<!:)\/\/.*$/gm, "")
+        .trim());
+}
+
 function copyDirectory(directory, destination) {
     // Copies the input directory to the destination directory
     fs.mkdirSync(destination, { recursive: true });
@@ -134,10 +145,10 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
-function createNestedPath(parent = "\u0015nested") {
+function createNestedPath(parent = "\u0015hidden") {
     // Generate a random nested folder path to store our files
     const folders = [];
-    const [ min, max ] = config.nestedRange;
+    const [ min, max ] = config.nestedFiles;
     for (let i = 0; i < randomInt(min, max); i++)
         folders.push(randomInt(0, 9).toString());
 
@@ -159,13 +170,7 @@ function renameTextures(directory) {
         if (!fileName.endsWith(".json")) continue;
 
         const fullPath = path.join(directory, fileName);
-        const jsonString = fs.readFileSync(fullPath, "utf-8")
-        // Remove all comments and the BOM (Byte order mark) that breaks parsing
-            .replaceAll(/\u0015/g, "\\u0015")
-            .replace(/\/\*[\s\S]*?\*\//g, "")
-            .replace(/(?<!:)\/\/.*$/gm, "")
-            .trim();
-        const jsonObject = JSON.parse(jsonString);
+        const jsonObject = parseJSON(fullPath);
 
         // Redefine this path to a random UUID and add it to the mapping
         const convertPath = (texturePath) => {
@@ -177,8 +182,8 @@ function renameTextures(directory) {
             if (!fs.existsSync(filePath + extension)) return texturePath;
 
             // Rename our file to a random UUID and store this new mapping
-            const parent = config.nestedFiles ? createNestedPath() : path.dirname(texturePath);
-            const newFile = path.join(parent, config.renamePrefix + crypto.randomUUID());
+            const newName = config.renamePrefix + crypto.randomUUID();
+            const newFile = path.join(createNestedPath(), newName);
             const newPath = path.join(outputDirectory, newFile);
 
             fs.renameSync(filePath + extension, newPath + extension);
@@ -205,7 +210,7 @@ function newPackUUID(directory) {
      * Simply generates a random new UUID in our manifest file
      */
     const manifest = path.join(directory, "manifest.json");
-    const jsonObject = JSON.parse(fs.readFileSync(manifest));
+    const jsonObject = parseJSON(manifest);
 
     jsonObject.header.uuid = crypto.randomUUID();
     jsonObject.header.name += " [OBFUSCATED]";
@@ -260,15 +265,12 @@ function obfuscateJSON(directory) {
                 .forEach((string, index) => jsonString = jsonString
                 .replaceAll(string, index.toString().repeat(50)));
 
-        /**
-         * Flood a ton of random garbage comments between the JSON data
-         */
+        // Flood a ton of random garbage comments between the JSON data
         let content = (config.unicode 
             ? jsonToUnicode(jsonString) : jsonString).replace(/\s+/g, "");
         const [ min, max ] = config.commentsSize;
-        const matchRegex = /{|\}|\[|\]|,|":/g;
 
-        if (config.comments) content = content.replace(matchRegex, (text) => {
+        if (config.comments) content = content.replace(/{|\}|\[|\]|,|":/g, (text) => {
             // We ignore the ": we matched from the regex in the prefix
             const prefix = text === '":' ? "" : randomComment(min, max);
             const suffix = randomComment(min, max);
@@ -292,6 +294,7 @@ function obfuscateJSON(directory) {
         obfuscationCount += files;
         commentCount += comments;
     }
+    
     return { files: obfuscationCount, comments: commentCount };
 }
 
@@ -322,7 +325,7 @@ function renameJSON(directory) {
         if (!renamable || retexturedPaths.has(parent)) continue;
         
         // Generate the new file path location of this JSON file
-        const newDirectory = config.nestedFiles ? createNestedPath(renamable) : parent;
+        const newDirectory = createNestedPath(renamable);
         const newName = config.renameJSON ? 
             config.renamePrefix + crypto.randomUUID() + ".json" : fileName;
         const newPath = path.join(outputDirectory, newDirectory, newName);
@@ -336,30 +339,41 @@ function renameJSON(directory) {
     return renameCount;
 }
 
-
-function floodFiles(directory) {
+function renameUIs(directory) {
     /**
-     * This function just writes a bunch of random empty files to 
+     * In order to rename UIs we will need to define their definitions, but this
+     * also breaks Minecraft's inheritance with their UIs, so we must merge files
      */
-    const [ min, max ] = config.fileFloodCount;
-    const extensions = [
-        ".gif", ".bmp", ".webp", ".exe", ".dumbass", ".lol",
-        ".txt", ".log", ".csv", ".xml", ".yaml", ".yml", ".ini",
-        ".cfg", ".dat", ".bin", ".zip", ".rar", ".7z", ".tar",
-        ".gz", ".bz2", ".iso", ".dmg", ".pkg", ".deb", ".rpm"
-    ];
-    let fileCount = 0;
+    const definitions = { ui_defs: [] };
+    const ui = path.join(directory, "ui");
     
-    const amount = randomInt(min, max);
-    for (let i = 0; i < amount; i++) {
-        const ext = extensions[randomInt(0, extensions.length - 1)];
-        const file = path.join(directory, crypto.randomUUID() + ext);
-        fs.writeFileSync(file, randomJunkChar(), "binary");
+    for (const fileName of fs.readdirSync(ui, () => {})) {
+        const newDirectory = createNestedPath();
+        const vanillaJSON = parseJSON(path.join("vanilla", fileName));
+        const currentJSON = parseJSON(path.join(ui, fileName));
+
+        // This will merge our custom ui files with their vanilla uis
+        for (const key of Object.keys(currentJSON))
+            if (typeof currentJSON[key] !== "object") continue;
+            else if (key in vanillaJSON)
+                Object.assign(vanillaJSON[key], currentJSON[key]);
+            else vanillaJSON[key] = currentJSON[key];
+
+        // You are able to rename JSON files with any file extension
+        const newName = config.renamePrefix + crypto.randomUUID() + ".png";
+        const newPath = path.join(newDirectory, newName);
+        const newJSON = JSON.stringify(vanillaJSON, null, 4);
+
+        fs.writeFileSync(path.join(directory, newPath), newJSON);
+        fs.rmSync(path.join(ui, fileName));
+        definitions.ui_defs.push(newPath);
     }
-    fileCount += amount;
-    for (const folderName of getDirectories(directory))
-        fileCount += floodFiles(folderName);
-    return fileCount;
+    // Flood the UI definitions file so its harder to know which are real files **Not implemnted yet**
+    
+    const output = path.join(ui, "_ui_defs.json");
+    fs.writeFileSync(output, JSON.stringify(definitions, null, 4));
+
+    return definitions.ui_defs.length;
 }
 
 function setReadOnly(directory) {
@@ -398,7 +412,7 @@ function convertTGA(directory) {
 
         readline.clearLine(process.stdout, 0);
         readline.cursorTo(process.stdout, 0);
-        process.stdout.write(`├── Converting to TGA format: ${color.green(current)}`);
+        process.stdout.write(`└── Converting to TGA format: ${color.green(current)}`);
         execSync(`ffmpeg -loglevel quiet -i "${fullPath}" "${output}"`);
 
         // Remove the old image file as we don't need it anymore
@@ -442,6 +456,6 @@ function deleteEmptyFolders(directory) {
 }
 
 module.exports = {
-    renameTextures, obfuscateJSON, renameJSON, floodFiles, setReadOnly, convertTGA,
+    renameTextures, obfuscateJSON, renameJSON, setReadOnly, convertTGA, renameUIs,
     newPackUUID, copyDirectory, directorySize, hasFFmpeg, deleteEmptyFolders, color
 }
