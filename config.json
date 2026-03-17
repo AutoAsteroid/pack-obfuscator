@@ -1,7 +1,7 @@
 {
     "input": "Asteroid Resources",
     "output": "Asteroid OBFS",
-    "newUUID": false,
+    "newUUID": true,
     "unicode": true,
     "renameUIs": true,
     "renameJSON": true,

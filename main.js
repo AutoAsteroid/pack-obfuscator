@@ -42,7 +42,9 @@ if (config.convertTGA) {
 }
 if (config.renameTextures) {
     const count = obfuscate.renameTextures(outputDirectory);
+    const textureMap = JSON.stringify(obfuscate.newTextureMap, null, 4);
     console.log("├── Renamed", green(count), "texture paths in JSON files.");
+    fs.writeFileSync("output/textures.json", textureMap, "utf-8");
 }
 if (config.renameUIs) {
     const count = obfuscate.renameUIs(outputDirectory);

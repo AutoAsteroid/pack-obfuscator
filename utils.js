@@ -53,6 +53,7 @@ function jsonToUnicode(jsonString) {
 
 function parseJSON(file) {
     if (!fs.existsSync(file, "utf-8")) return {};
+
     // Safely parses a json file by removing comments first
     return JSON.parse(fs
         .readFileSync(file, "utf-8")
@@ -348,6 +349,8 @@ function renameUIs(directory) {
     const ui = path.join(directory, "ui");
     
     for (const fileName of fs.readdirSync(ui, () => {})) {
+        if (!fileName.endsWith(".json")) continue;
+
         const newDirectory = createNestedPath();
         const vanillaJSON = parseJSON(path.join("vanilla", fileName));
         const currentJSON = parseJSON(path.join(ui, fileName));
@@ -456,6 +459,6 @@ function deleteEmptyFolders(directory) {
 }
 
 module.exports = {
-    renameTextures, obfuscateJSON, renameJSON, setReadOnly, convertTGA, renameUIs,
+    renameTextures, obfuscateJSON, renameJSON, setReadOnly, convertTGA, renameUIs, newTextureMap,
     newPackUUID, copyDirectory, directorySize, hasFFmpeg, deleteEmptyFolders, color
 }
