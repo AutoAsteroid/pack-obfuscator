@@ -1,6 +1,6 @@
 {
-    "input": "Asteroid Resources",
-    "output": "Asteroid OBFS",
+    "input": "My Resources",
+    "output": "",
     "newUUID": true,
     "unicode": true,
     "renameUIs": false,
@@ -10,7 +10,7 @@
     "renamePrefix": ".\u202E\u0015\u0014\u0013\u0012",
     "comments": true,
     "commentsSize": [ 25, 50 ],
-    "setReadOnly": true,
-    "convertTGA": true,
+    "setReadOnly": false,
+    "convertTGA": false,
     "nestedFiles": [ 3, 20 ]
 }
