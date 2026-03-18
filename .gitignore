@@ -3,12 +3,9 @@ input/**
 output/**
 
 # Ignore assets folder
-assets/*
+assets/**
+!assets/
 !assets/bp-items/
 !assets/new-items/
 !assets/vanilla-ui/
-
-# Recursively ignore files
-assets/bp-items/**
-assets/new-items/**
-assets/vanilla-ui/**
+!assets/**/.gitkeep
