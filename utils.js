@@ -58,12 +58,12 @@ function jsonToUnicode(jsonString) {
     .replaceAll("\\u005c\\u006e", "\\u000a");
 }
 
-function parseJSON(file) {
-    if (!fs.existsSync(file, "utf-8")) return {};
+function parseJSON(filePath) {
+    if (!fs.existsSync(filePath, "utf-8")) return {};
 
     // Safely parses a json file by removing comments first
     return JSON.parse(fs
-        .readFileSync(file, "utf-8")
+        .readFileSync(filePath, "utf-8")
         .replaceAll(/\u0015/g, "\\u0015")
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/(?<!:)\/\/.*$/gm, "")
@@ -153,7 +153,7 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
-function getNestedPath(parent = "\u0015hidden", mkdir = true) {
+function getNestedPath(parent = "\u0015", mkdir = true) {
     // Generate a random nested folder path to store our files
     const folders = [];
     const [ min, max ] = config.nestedFiles;
@@ -165,6 +165,59 @@ function getNestedPath(parent = "\u0015hidden", mkdir = true) {
     if (mkdir === true)
         fs.mkdirSync(create, { recursive: true });
     return fullPath;
+}
+
+function renameIcons(directory) {
+    /**
+     * This function will read into assets/bp-items and textures/item_texture.json to
+     * rename the icon keys that the itemss resolve to. This must edit behavior pack to work
+     */
+    const itemTexturePath = path.join(directory, "textures", "item_texture.json");
+    const itemTextures = parseJSON(itemTexturePath);
+
+    const iconMapping = {}
+    const convertItems = (folder) => {
+        /**
+         * Find every minecraft:icon in assets/bp-items and remap them to UUIDs
+         * if the icon is defined in item_texture.json 
+         */
+        for (const fileName of fs.readdirSync(folder, () => {})) {
+            if (!fileName.endsWith(".json")) continue;
+
+            const fullPath = path.join(folder, fileName);
+            const itemJSON = parseJSON(fullPath);
+            const icon = itemJSON["minecraft:item"].components["minecraft:icon"];
+            if (icon in itemTextures.texture_data === false) continue;
+
+            const newIcon = iconMapping[icon] ??= crypto.randomUUID();
+            itemJSON["minecraft:item"].components["minecraft:icon"] = newIcon;
+            fs.writeFileSync(fullPath, JSON.stringify(itemJSON, null, 4));
+        }
+        getDirectories(folder).forEach(convertItems);
+    }
+    // Copy the new item files that we will need to use in our behavior pack
+    copyDirectory("assets/bp-items", "assets/new-items");
+    convertItems("assets/new-items");
+
+    // Remap the item_textures.json file to reflect the new icon mappings provided
+    for (const key in iconMapping) {
+        itemTextures.texture_data[iconMapping[key]] = itemTextures.texture_data[key];
+        delete itemTextures.texture_data[key];
+    }
+    // Flood the item textures with fake paths
+    for (let i = 0; i < 300; i++) {
+        const fakePath = getNestedPath(undefined, false);
+        const fakeName = config.renamePrefix + crypto.randomUUID() + ".png";
+        const texture = { textures: path.join(fakePath, fakeName) };
+        itemTextures.texture_data[crypto.randomUUID()] = texture;
+    }
+
+    // Shuffle the order of our item textures so the fake flood is actually effective
+    const shuffle = Object.entries(itemTextures.texture_data).sort(() => Math.random() - 0.5);
+    itemTextures.texture_data = Object.fromEntries(shuffle);
+    fs.writeFileSync(itemTexturePath, JSON.stringify(itemTextures, null, 4));
+
+    return Object.keys(iconMapping).length;
 }
 
 const newTextureMap = {};
@@ -391,7 +444,7 @@ function renameUIs(directory) {
 
     const output = JSON.stringify(definitions, null, 4);
     fs.writeFileSync(path.join(ui, "_ui_defs.json"), output);
-    return definitions.ui_defs.length;
+    return definitions.ui_defs.length - 100;
 }
 
 function setReadOnly(directory) {
@@ -466,14 +519,16 @@ function deleteEmptyFolders(directory) {
     for (const filePath of getDirectories(directory))
         deleteCount += deleteEmptyFolders(filePath);
 
-    const files = fs.readdirSync(directory);
-    if (files.filter(file => file !== ".DS_Store").length) 
-        return deleteCount;
+    // Make sure the root directory is not read only
+    fs.chmodSync(directory, 0o777);
+    
+    if (fs.readdirSync(directory).length) return deleteCount;
     else fs.rmSync(directory, { recursive: true, force: true });
     return deleteCount + 1;
 }
 
 module.exports = {
-    renameTextures, obfuscateJSON, renameJSON, setReadOnly, convertTGA, renameUIs, newTextureMap,
-    newPackUUID, copyDirectory, directorySize, hasFFmpeg, deleteEmptyFolders, color
+    renameTextures, obfuscateJSON, renameJSON, setReadOnly, convertTGA, 
+    renameUIs, newPackUUID, copyDirectory, directorySize, hasFFmpeg, 
+    renameIcons, deleteEmptyFolders, color, newTextureMap
 }

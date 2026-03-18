@@ -3,13 +3,14 @@
     "output": "Asteroid OBFS",
     "newUUID": true,
     "unicode": true,
-    "renameUIs": true,
+    "renameUIs": false,
     "renameJSON": true,
     "renameTextures": true,
+    "renameItemIcons": false,
     "renamePrefix": ".\u202E\u0015\u0014\u0013\u0012",
     "comments": true,
     "commentsSize": [ 25, 50 ],
-    "setReadOnly": false,
-    "convertTGA": false,
+    "setReadOnly": true,
+    "convertTGA": true,
     "nestedFiles": [ 3, 20 ]
 }

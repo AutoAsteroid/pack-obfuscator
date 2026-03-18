@@ -22,6 +22,9 @@ if (!fs.existsSync(path.join(inputDirectory, "manifest.json")))
 if (config.convertTGA && !obfuscate.hasFFmpeg())
     return console.log("└── Convert TGA requires you to have ffmpeg installed.");
 
+if (config.renameItemIcons && !fs.existsSync(path.join(inputDirectory, "textures/item_texture.json")))
+    return console.log("└── Renaming texture icons requires a textures/item_texture.json file.");
+
 if (Object.values(config).filter(value => value === true).length !== 0) {
     console.log("│   Copying all pack content into:", yellow("./" + outputDirectory));
     fs.rmSync(outputDirectory, { recursive: true, force: true });
@@ -40,11 +43,15 @@ if (config.convertTGA) {
     const count = obfuscate.convertTGA(outputDirectory);
     console.log("├── Converted", green(count), "image files to TGA format.");
 }
+if (config.renameItemIcons) {
+    const count = obfuscate.renameIcons(outputDirectory);
+    console.log("├── Renamed", green(count), "icon names in textures/item_texture.json.");
+}
 if (config.renameTextures) {
     const count = obfuscate.renameTextures(outputDirectory);
     const textureMap = JSON.stringify(obfuscate.newTextureMap, null, 4);
     console.log("├── Renamed", green(count), "texture paths in JSON files.");
-    fs.writeFileSync("output/textures.json", textureMap, "utf-8");
+    fs.writeFileSync("assets/textures.json", textureMap, "utf-8");
 }
 if (config.renameUIs) {
     const count = obfuscate.renameUIs(outputDirectory);

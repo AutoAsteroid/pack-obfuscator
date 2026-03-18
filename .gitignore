@@ -1,12 +1,14 @@
-# macOS junk files
-.DS_Store
-**/.DS_Store
+# Ignore input and output
+input/**
+output/**
 
-# Ignore folder contents
-input/**/*
-output/**/*
-vanilla/**/*
+# Ignore assets folder
+assets/*
+!assets/bp-items/
+!assets/new-items/
+!assets/vanilla-ui/
 
-!input/.gitkeep
-!output/.gitkeep
-!vanilla/.gitkeep
+# Recursively ignore files
+assets/bp-items/**
+assets/new-items/**
+assets/vanilla-ui/**
