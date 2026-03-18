@@ -23,6 +23,13 @@ function stringToUnicode(string) {
 function randomInt(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
 }
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = randomInt(0, i + 1);
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
 
 const color = {
     reset: "\x1b[0m",
@@ -41,11 +48,11 @@ function hasFFmpeg() {
 
 function jsonToUnicode(jsonString) {
     // Converts a json object to its unicode escape sequence equivalent
-    const ignoredStrings = new Set([ `"Array.skins"` ]);
-    return jsonString.replace(/"([^"]*)"/g, (match) => 
-        ignoredStrings.has(match) ? 
-        match: stringToUnicode(match))
-
+    // For some reason we cannot put unicode the following: "Array.**"
+    return jsonString.replace(/"([^"]*)"/g, (match) =>
+        match.startsWith('"Array.') ? 
+        match : stringToUnicode(match))
+        
     // Rewrite unicode " as actual " and rewrite \n
     .replaceAll("\\u0022", "\"")
     .replaceAll("\\u005c\\u006e", "\\u000a");
@@ -146,7 +153,7 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
-function createNestedPath(parent = "\u0015hidden") {
+function getNestedPath(parent = "\u0015hidden", mkdir = true) {
     // Generate a random nested folder path to store our files
     const folders = [];
     const [ min, max ] = config.nestedFiles;
@@ -155,7 +162,8 @@ function createNestedPath(parent = "\u0015hidden") {
 
     const fullPath = path.join(parent, ...folders);
     const create = path.join(outputDirectory, fullPath);
-    fs.mkdirSync(create, { recursive: true });
+    if (mkdir === true)
+        fs.mkdirSync(create, { recursive: true });
     return fullPath;
 }
 
@@ -184,7 +192,7 @@ function renameTextures(directory) {
 
             // Rename our file to a random UUID and store this new mapping
             const newName = config.renamePrefix + crypto.randomUUID();
-            const newFile = path.join(createNestedPath(), newName);
+            const newFile = path.join(getNestedPath(), newName);
             const newPath = path.join(outputDirectory, newFile);
 
             fs.renameSync(filePath + extension, newPath + extension);
@@ -308,6 +316,7 @@ function renameJSON(directory) {
      */
     let renameCount = 0;
     const renamableDirectories = [
+        "/animation_controllers",
         "/animations",
         "/attachables",
         "/entity",
@@ -326,7 +335,7 @@ function renameJSON(directory) {
         if (!renamable || retexturedPaths.has(parent)) continue;
         
         // Generate the new file path location of this JSON file
-        const newDirectory = createNestedPath(renamable);
+        const newDirectory = getNestedPath(renamable);
         const newName = config.renameJSON ? 
             config.renamePrefix + crypto.randomUUID() + ".json" : fileName;
         const newPath = path.join(outputDirectory, newDirectory, newName);
@@ -351,7 +360,7 @@ function renameUIs(directory) {
     for (const fileName of fs.readdirSync(ui, () => {})) {
         if (!fileName.endsWith(".json")) continue;
 
-        const newDirectory = createNestedPath();
+        const newDirectory = getNestedPath();
         const vanillaJSON = parseJSON(path.join("vanilla", fileName));
         const currentJSON = parseJSON(path.join(ui, fileName));
 
@@ -362,7 +371,7 @@ function renameUIs(directory) {
                 Object.assign(vanillaJSON[key], currentJSON[key]);
             else vanillaJSON[key] = currentJSON[key];
 
-        // You are able to rename JSON files with any file extension
+        // You are able to rename JSON UI files with any file extension
         const newName = config.renamePrefix + crypto.randomUUID() + ".png";
         const newPath = path.join(newDirectory, newName);
         const newJSON = JSON.stringify(vanillaJSON, null, 4);
@@ -371,11 +380,17 @@ function renameUIs(directory) {
         fs.rmSync(path.join(ui, fileName));
         definitions.ui_defs.push(newPath);
     }
-    // Flood the UI definitions file so its harder to know which are real files **Not implemnted yet**
-    
-    const output = path.join(ui, "_ui_defs.json");
-    fs.writeFileSync(output, JSON.stringify(definitions, null, 4));
+    // Flood the UI definitions file so its harder to know which are real files
+    for (let i = 0; i < 100; i++) {
+        const fakePath = getNestedPath(undefined, false);
+        const fakeName = config.renamePrefix + crypto.randomUUID() + ".png";
+        definitions.ui_defs.push(path.join(fakePath, fakeName));
+    }
+    // Shuffle our definitions so its in a random order
+    shuffleArray(definitions.ui_defs);
 
+    const output = JSON.stringify(definitions, null, 4);
+    fs.writeFileSync(path.join(ui, "_ui_defs.json"), output);
     return definitions.ui_defs.length;
 }
 
