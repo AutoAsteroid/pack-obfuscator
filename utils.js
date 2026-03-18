@@ -154,7 +154,7 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
-function createNestedPath(parent = "\u0015", mkdir = true) {
+function createNestedPath(parent = ".\u0015", mkdir = true) {
     // Generate a random nested folder path to store our files
     const folders = [];
     const [ min, max ] = config.nestedFiles;
@@ -165,7 +165,7 @@ function createNestedPath(parent = "\u0015", mkdir = true) {
     for (let i = 0; i < randomInt(min, max); i++)
         folders.push((Math.random() < 0.5 ? RLO : LRO) + randomInt(0, 9));
 
-    const fullPath = path.join(parent, ...folders);
+    const fullPath = path.join(parent, "\u0015", ...folders);
     const create = path.join(outputDirectory, fullPath);
     if (mkdir === true)
         fs.mkdirSync(create, { recursive: true });
