@@ -31,16 +31,13 @@ function shuffleArray(array) {
     return array;
 }
 
+const count = {};
 const color = {
     reset: "\x1b[0m",
     red: text => "\x1b[31m" + text + color.reset,
     green: text => "\x1b[32m" + text + color.reset,
     yellow: text => "\x1b[33m" + text + color.reset
 }
-
-const count = {
-
-};
 
 function hasFFmpeg() {
     // Makes sure the user has ffmpeg installed for tga converting
@@ -157,12 +154,16 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
-function getNestedPath(parent = "\u0015", mkdir = true) {
+function createNestedPath(parent = "\u0015", mkdir = true) {
     // Generate a random nested folder path to store our files
     const folders = [];
     const [ min, max ] = config.nestedFiles;
+
+    // Inject left to right and right to left overrides
+    const RLO = "\u202E";
+    const LRO = "\u202D";
     for (let i = 0; i < randomInt(min, max); i++)
-        folders.push(randomInt(0, 9).toString());
+        folders.push((Math.random() < 0.5 ? RLO : LRO) + randomInt(0, 9));
 
     const fullPath = path.join(parent, ...folders);
     const create = path.join(outputDirectory, fullPath);
@@ -211,7 +212,7 @@ function renameIcons(directory) {
     }
     // Flood the item textures with fake paths
     for (let i = 0; i < 300; i++) {
-        const fakePath = getNestedPath(undefined, false);
+        const fakePath = createNestedPath(undefined, false);
         const fakeName = config.renamePrefix + crypto.randomUUID() + ".png";
         const texture = { textures: path.join(fakePath, fakeName) };
         itemTextures.texture_data[crypto.randomUUID()] = texture;
@@ -246,7 +247,7 @@ function renameTextures(directory) {
 
             // Rename our file to a random UUID and store this new mapping
             const newName = config.renamePrefix + crypto.randomUUID();
-            const newFile = path.join(getNestedPath(), newName);
+            const newFile = path.join(createNestedPath(), newName);
             const newPath = path.join(outputDirectory, newFile);
 
             fs.renameSync(filePath + extension, newPath + extension);
@@ -403,7 +404,7 @@ function renameJSON(directory) {
         if (!renamable || retexturedPaths.has(parent)) continue;
         
         // Generate the new file path location of this JSON file
-        const newDirectory = getNestedPath(renamable);
+        const newDirectory = createNestedPath(renamable);
         const newName = config.renameJSON ? 
             config.renamePrefix + crypto.randomUUID() + ".json" : fileName;
         const newPath = path.join(outputDirectory, newDirectory, newName);
@@ -427,7 +428,7 @@ function renameUIs(directory) {
     for (const fileName of fs.readdirSync(ui, () => {})) {
         if (!fileName.endsWith(".json")) continue;
 
-        const newDirectory = getNestedPath();
+        const newDirectory = createNestedPath();
         const vanillaJSON = parseJSON(path.join("assets/vanilla-ui", fileName));
         const currentJSON = parseJSON(path.join(ui, fileName));
 
@@ -450,7 +451,7 @@ function renameUIs(directory) {
     }
     // Flood the UI definitions file so its harder to know which are real files
     for (let i = 0; i < 100; i++) {
-        const fakePath = getNestedPath(undefined, false);
+        const fakePath = createNestedPath(undefined, false);
         const fakeName = config.renamePrefix + crypto.randomUUID() + ".png";
         definitions.ui_defs.push(path.join(fakePath, fakeName));
     }
