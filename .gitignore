@@ -1,3 +1,6 @@
+# macOS junk
+.DS_Store
+
 # Ignore input and output
 input/**
 output/**
