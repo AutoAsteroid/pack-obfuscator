@@ -3,12 +3,15 @@
  * This program takes a resource pack and obfuscates it via the enabled configs
  */
 
+const path = require("path");
+const fs = require("fs");
+
+// Normalize file paths to use unix style file paths so this works on windows fine
+const pathJoin = path.join; path.join = (...args) => pathJoin(...args).replace(/\\/g, "/");
+
 const config = require("./config.json");
 const obfuscate = require("./utils.js");
 const { color: { red, green, yellow }, count } = obfuscate;
-
-const path = require("path");
-const fs = require("fs");
 
 /**
  * Pre obfuscation checks that copies our files and ensure this is a vaid pack
@@ -46,14 +49,14 @@ if (config.renameItemIcons) {
     obfuscate.renameIcons(outputDirectory);
     console.log("├── Renamed", green(count.renameIcons), "icon names in textures/item_texture.json.");
 }
+if (config.mergeUIs) {
+    obfuscate.mergeUIs(outputDirectory);
+    console.log("├── Merged", green(count.mergeUIs), "JSON UI files.");
+}
 if (config.renameTextures) {
     obfuscate.renameTextures(outputDirectory);
     fs.writeFileSync("assets/textures.json", JSON.stringify(obfuscate.newTextureMap, null, 4), "utf-8");
     console.log("├── Renamed", green(count.renameTextures), "texture paths in JSON files.");
-}
-if (config.renameUIs) {
-    obfuscate.renameUIs(outputDirectory);
-    console.log("├── Renamed", green(count.renameUIs), "JSON UI file paths.");
 }
 if (config.unicode || config.comments) {
     obfuscate.obfuscateJSON(outputDirectory);

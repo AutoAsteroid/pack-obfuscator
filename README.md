@@ -2,6 +2,8 @@
 
 This program takes a **Minecraft resource pack** and obfuscates it to make it more difficult for others to navigate or modify. Obfuscation is not the same as encryption, and a determined user can still reverse engineer the pack. But, this is the best we can do without access to true encryption. This is a work in progress and may not work for some packs.
 
+### Window Users: You may need to run this with WSL!
+
 ### Features:
 
 - **JSON Unicode Escape** – converts JSON files to their unicode escape sequences.  
@@ -19,16 +21,16 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
     "output": "",                                           // Fallback to input if not defined
     "newUUID": true,                                        // Generate a new manifest UUID
     "unicode": true,                                        // Unicode escape JSON files
-    "renameUIs": false,                                     // Repath your UI files
+    "mergeUIs": false,                                      // Merge your UI files to their vanilla uis
     "renameJSON": true,                                     // Rename JSON files to random UUIDs
     "renameTextures": true,                                 // Resolve texture paths and rename them
     "renameItemIcons": false,                               // Rename the icon keys in item_texture.json
-    "renamePrefix": ".\u202E\u0015\u0014\u0013\u0012",      // Rename files with this prefix
+    "renamePrefix": ".",                                    // Rename files with this prefix
     "comments": true,                                       // Flood JSON files with garbage comments
     "commentsSize": [ 50, 100 ],                            // Size range of each comment
     "setReadOnly": false,                                   // Set all files to read only
     "convertTGA": false,                                    // Converts .png and .jpeg files to .tga
-    "nestedFiles": [ 3, 20 ],                               // Range of nested folder depth
+    "nestedDepth": [ 250, 300 ],                            // Range of nested folder depth
 }
 ```
 
@@ -46,7 +48,7 @@ Resource Pack Obsfucator % node main
 ├── Converted 611 image files to TGA format.
 ├── Renamed 95 icon names in textures/item_texture.json.
 ├── Renamed 132 texture paths in JSON files.
-├── Renamed 7 JSON UI file paths.
+├── Merged 7 JSON UI file paths.
 ├── Escaped 174 applicable JSON unicode files.
 ├── Flooded 48288 comments into all JSON files.
 ├── Renamed 156 applicable JSON file paths.
@@ -64,8 +66,6 @@ You may be required to run as sudo if you previously enabled setReadOnly!
 - **Rename Textures:** If enabled, behavior packs that reference your textures (such as action forms) will not work due to their file paths changing. To fix this, use the generated texture path mapping in `assets/textures.json` to remap your texture paths in your scripts. In the scenario that your pack modifies a vanilla texture and something in your pack uses it, Minecraft will use the vanilla texture while your pack uses the modified version. For example, if you have a custom item using a modified version of `textures/items/totem.png`, your custom item will use the modified version while vanilla Minecraft will use the vanilla texture.
 
 - **Comments Enabled:** The larger the comment size range, the larger your pack becomes contingent on the size and amount of JSON files your pack has. Increasingly large ranges become pointless as they trade off unnecessary pack size for something that can be cleaned by a JSON parser. Too small of ranges and your JSON files do not look obfuscated as thoroughly.
-
-- **Rename Prefix:** By default, the rename prefix prepends `.` to hide from linux, `\u202E` (Right-to-Left override) to reverse the name, and control characters `\u0015\u0014\u0013\u0012` that cause certain operating systems to not know the file exists. For example, files and folders named with them do not show on the default Windows file explorer, but macOS and WinRAR can view them fine.
 
 - **Rename Item Icons:** Using this will rename the icon keys in `textures/item_texture.json`. This will break your behavior packs that use those key names unless we remap those icon keys too. Input your items folder into `assets/bp-items` so we can remap those icon keys. You will have to use the new generated items folder `assets/new-items` in your behavior pack.
 

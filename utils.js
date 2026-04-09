@@ -23,15 +23,18 @@ function stringToUnicode(string) {
 function randomInt(min, max) {
     return min + Math.floor(Math.random() * (max - min + 1));
 }
-function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = randomInt(0, i + 1);
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
 
-const count = {};
+const count = {
+    renameIcons: 0,
+    renameJSON: 0,
+    renameTextures: 0,
+    mergeUIs: 0,
+    readOnly: 0,
+    convertTGA: 0,
+    unicode: 0,
+    comments: 0,
+    deleteEmpty: 0
+};
 const color = {
     reset: "\x1b[0m",
     red: text => "\x1b[31m" + text + color.reset,
@@ -65,7 +68,6 @@ function parseJSON(filePath) {
     // Safely parses a json file by removing comments first
     return JSON.parse(fs
         .readFileSync(filePath, "utf-8")
-        .replaceAll(/\u0015/g, "\\u0015")
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/(?<!:)\/\/.*$/gm, "")
         .trim());
@@ -154,18 +156,16 @@ function manipulateStrings(parent, key, transform) {
     return parent[key];
 }
 
-function createNestedPath(parent = ".\u0015", mkdir = true) {
+function createNestedPath(parent = "\u200B", mkdir = true) {
     // Generate a random nested folder path to store our files
     const folders = [];
-    const [ min, max ] = config.nestedFiles;
+    const [ min, max ] = config.nestedDepth;
 
     // Inject left to right and right to left overrides
-    const RLO = "\u202E";
-    const LRO = "\u202D";
     for (let i = 0; i < randomInt(min, max); i++)
-        folders.push((Math.random() < 0.5 ? RLO : LRO) + randomInt(0, 9));
+        folders.push(randomInt(0, 9).toString());
 
-    const fullPath = path.join(parent, "\u0015", ...folders);
+    const fullPath = path.join(parent, ...folders);
     const create = path.join(outputDirectory, fullPath);
     if (mkdir === true)
         fs.mkdirSync(create, { recursive: true });
@@ -197,7 +197,7 @@ function renameIcons(directory) {
             const newIcon = iconMapping[icon] ??= crypto.randomUUID();
             itemJSON["minecraft:item"].components["minecraft:icon"] = newIcon;
             fs.writeFileSync(fullPath, JSON.stringify(itemJSON, null, 4));
-            count.renameIcons = (count.renameIcons ?? 0) + 1;
+            count.renameIcons += 1;
         }
         getDirectories(folder).forEach(convertItems);
     }
@@ -211,7 +211,8 @@ function renameIcons(directory) {
         delete itemTextures.texture_data[key];
     }
     // Flood the item textures with fake paths
-    for (let i = 0; i < 300; i++) {
+    const length = Object.keys(itemTextures.texture_data).length * 5;
+    for (let i = 0; i < length; i++) {
         const fakePath = createNestedPath(undefined, false);
         const fakeName = config.renamePrefix + crypto.randomUUID() + ".png";
         const texture = { textures: path.join(fakePath, fakeName) };
@@ -251,8 +252,7 @@ function renameTextures(directory) {
             const newPath = path.join(outputDirectory, newFile);
 
             fs.renameSync(filePath + extension, newPath + extension);
-            count.renameTextures = (count.renameTextures ?? 0) + 1;
-            newTextureMap[texturePath] = newFile; 
+            newTextureMap[texturePath] = newFile; count.renameTextures += 1;
             return newFile;
         }
         // Convert the values of all the "textures" keys in the object
@@ -269,9 +269,7 @@ function renameTextures(directory) {
 }
 
 function newPackUUID(directory) {
-    /**
-     * Simply generates a random new UUID in our manifest file
-     */
+    // Generates a random new UUID in our manifest file and stamp it
     const manifest = path.join(directory, "manifest.json");
     const jsonObject = parseJSON(manifest);
 
@@ -308,7 +306,7 @@ function floodComments(content, min, max) {
      * This function will flood a JSON string with a ton of comments between the strings
      * We walk through each string literal and figure out when we are in or out
      */
-    let contentOut = "", inString = false, escape = false; count.comments ??= 0;
+    let contentOut = "", inString = false, escape = false;
     const special = new Set([ "{", "}", "[", "]", ",", ":" ]);
 
     for (let i = 0; i < content.length; i++) {
@@ -344,7 +342,7 @@ function obfuscateJSON(directory) {
         "/particles": [ '"format_version": "1.10.0",' ]
     }
     for (const fileName of fs.readdirSync(directory, () => {})) {
-        if (!fileName.endsWith(".json")) continue;
+        if (!fileName.endsWith(".json") || fileName === "_ui_defs.json") continue;
 
         const fullPath = path.join(directory, fileName);
         const parent = directory.replace(outputDirectory, "");
@@ -372,7 +370,7 @@ function obfuscateJSON(directory) {
                 .replaceAll(index.toString().repeat(50), string));
 
         fs.writeFileSync(fullPath, content, "utf8");
-        count.unicode = (count.unicode ?? 0) + 1;
+        count.unicode += 1;
     }
     getDirectories(directory).forEach(obfuscateJSON);
 }
@@ -412,23 +410,20 @@ function renameJSON(directory) {
         if (fullPath === newPath) continue;
         fs.renameSync(fullPath, newPath);
         retexturedPaths.add(newDirectory);
-        count.renameJSON = (count.renameJSON ?? 0) + 1;
+        count.renameJSON += 1;
     }
     getDirectories(directory).forEach(renameJSON);
 }
 
-function renameUIs(directory) {
+function mergeUIs(directory) {
     /**
-     * In order to rename UIs we will need to define their definitions, but this
-     * also breaks Minecraft's inheritance with their UIs, so we must merge files
+     * This function will merge vanilla UIs to your UI's that modify vanilla UIs
      */
-    const definitions = { ui_defs: [] };
     const ui = path.join(directory, "ui");
     
     for (const fileName of fs.readdirSync(ui, () => {})) {
         if (!fileName.endsWith(".json")) continue;
 
-        const newDirectory = createNestedPath();
         const vanillaJSON = parseJSON(path.join("assets/vanilla-ui", fileName));
         const currentJSON = parseJSON(path.join(ui, fileName));
 
@@ -439,27 +434,10 @@ function renameUIs(directory) {
                 Object.assign(vanillaJSON[key], currentJSON[key]);
             else vanillaJSON[key] = currentJSON[key];
 
-        // You are able to rename JSON UI files with any file extension
-        const newName = config.renamePrefix + crypto.randomUUID() + ".png";
-        const newPath = path.join(newDirectory, newName);
         const newJSON = JSON.stringify(vanillaJSON, null, 4);
-
-        fs.writeFileSync(path.join(directory, newPath), newJSON);
-        fs.rmSync(path.join(ui, fileName));
-        definitions.ui_defs.push(newPath);
-        count.renameUIs = (count.renameUIs ?? 0) + 1;
+        fs.writeFileSync(path.join(ui, fileName), newJSON);
+        count.mergeUIs += 1;
     }
-    // Flood the UI definitions file so its harder to know which are real files
-    for (let i = 0; i < 100; i++) {
-        const fakePath = createNestedPath(undefined, false);
-        const fakeName = config.renamePrefix + crypto.randomUUID() + ".png";
-        definitions.ui_defs.push(path.join(fakePath, fakeName));
-    }
-    // Shuffle our definitions so its in a random order
-    shuffleArray(definitions.ui_defs);
-
-    const output = JSON.stringify(definitions, null, 4);
-    fs.writeFileSync(path.join(ui, "_ui_defs.json"), output);
 }
 
 function setReadOnly(directory) {
@@ -473,7 +451,7 @@ function setReadOnly(directory) {
 
         if (!fs.statSync(fullPath).isFile()) continue;
         fs.chmodSync(fullPath, 0o444);
-        count.readOnly = (count.readOnly ?? 0) + 1;
+        count.readOnly += 1;
     }
     getDirectories(directory).forEach(setReadOnly);
 }
@@ -498,8 +476,7 @@ function convertTGA(directory) {
         execSync(`ffmpeg -loglevel quiet -i "${fullPath}" "${output}"`);
 
         // Remove the old image file as we don't need it anymore
-        fs.rmSync(fullPath); 
-        count.convertTGA = (count.convertTGA ?? 0) + 1;
+        fs.rmSync(fullPath); count.convertTGA += 1;
 
         // "Corrupt" our tga file for low level parsers. Not fullproof
         const buffer = fs.readFileSync(output);
@@ -529,11 +506,11 @@ function deleteEmptyFolders(directory) {
     
     if (fs.readdirSync(directory).length) return;
     else fs.rmSync(directory, { recursive: true, force: true });
-    count.deleteEmpty = (count.deleteEmpty ?? 0) + 1;
+    count.deleteEmpty += 1;
 }
 
 module.exports = {
     renameTextures, obfuscateJSON, renameJSON, setReadOnly, convertTGA, 
-    renameUIs, newPackUUID, copyDirectory, directorySize, hasFFmpeg, 
+    mergeUIs, newPackUUID, copyDirectory, directorySize, hasFFmpeg, 
     renameIcons, deleteEmptyFolders, color, newTextureMap, count
 }
