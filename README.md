@@ -2,8 +2,6 @@
 
 This program takes a **Minecraft resource pack** and obfuscates it to make it more difficult for others to navigate or modify. Obfuscation is not the same as encryption, and a determined user can still reverse engineer the pack. But, this is the best we can do without access to true encryption. This is a work in progress and may not work for some packs.
 
-### Window Users: You may need to run this with WSL!
-
 ### Features:
 
 - **JSON Unicode Escape** – converts JSON files to their unicode escape sequences.  
@@ -30,7 +28,7 @@ This program takes a **Minecraft resource pack** and obfuscates it to make it mo
     "commentsSize": [ 50, 100 ],                            // Size range of each comment
     "setReadOnly": false,                                   // Set all files to read only
     "convertTGA": false,                                    // Converts .png and .jpeg files to .tga
-    "nestedDepth": [ 250, 300 ],                            // Range of nested folder depth
+    "nestedDepth": [ 20, 30 ],                              // Range of depth (can't be too large)
 }
 ```
 
@@ -61,7 +59,7 @@ You may be required to run as sudo if you previously enabled setReadOnly!
 
 ### Important Notes & Caveats:
 
-- **Rename UIs:** If your UIs are modified versions of vanilla UI files, having rename UIs enabled will break your pack unless we merge your files with the vanilla UI it inherits from. To fix this, place the respective vanilla UI files into the `assets/vanilla-ui` folder. For example, if your pack edits parts of `server_form.json`, place the FULL vanilla version of `server_form.json` into `assets/vanilla-ui`. We will use this to merge the files while keeping your changes present.
+- **Merge UIs:** If your UIs are modified versions of vanilla UI files, you can merge your files with the vanilla UI files it inherits from. To do this, place the respective vanilla UI files into the `assets/vanilla-ui` folder. For example, if your pack edits parts of `server_form.json`, place the FULL vanilla version of `server_form.json` into `assets/vanilla-ui`. We will use this to merge the files while keeping your changes present.
 
 - **Rename Textures:** If enabled, behavior packs that reference your textures (such as action forms) will not work due to their file paths changing. To fix this, use the generated texture path mapping in `assets/textures.json` to remap your texture paths in your scripts. In the scenario that your pack modifies a vanilla texture and something in your pack uses it, Minecraft will use the vanilla texture while your pack uses the modified version. For example, if you have a custom item using a modified version of `textures/items/totem.png`, your custom item will use the modified version while vanilla Minecraft will use the vanilla texture.
 

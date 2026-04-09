@@ -1,6 +1,6 @@
 {
-    "input": "Asteroid Resources",
-    "output": "Asteroid OBFS",
+    "input": "My Resource Pack",
+    "output": "",
     "newUUID": true,
     "unicode": true,
     "mergeUIs": false,
@@ -12,5 +12,5 @@
     "commentsSize": [ 25, 50 ],
     "setReadOnly": false,
     "convertTGA": false,
-    "nestedDepth": [ 250, 300 ]
+    "nestedDepth": [ 20, 30 ]
 }
